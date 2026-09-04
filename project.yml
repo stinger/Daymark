@@ -1,0 +1,64 @@
+name: Daymark
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "26.0"
+packages:
+  SchedulerKit:
+    path: Packages/SchedulerKit
+  AssistantKit:
+    path: Packages/AssistantKit
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: ""
+targets:
+  Daymark:
+    type: application
+    platform: iOS
+    sources:
+      - Daymark
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.snappmobile.demo.Daymark
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Daymark
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: Daymark reads your selected calendars to answer schedule questions on device.
+        INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription: Daymark writes calendar events only when you explicitly create the workshop demo schedule.
+        TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - package: SchedulerKit
+      - package: AssistantKit
+    postBuildScripts:
+      - name: Lint
+        shell: /bin/sh
+        basedOnDependencyAnalysis: false
+        runOnlyWhenInstalling: false
+        script: |
+          set -o pipefail
+
+          xcrun swift-format lint \
+            --configuration "$SRCROOT/.swiftformat" \
+            --recursive \
+            "$SRCROOT/Daymark" \
+            "$SRCROOT/DaymarkTests" \
+            "$SRCROOT/Packages/SchedulerKit" \
+            "$SRCROOT/Packages/AssistantKit"
+    scheme:
+      testTargets:
+        - DaymarkTests
+  DaymarkTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - DaymarkTests
+    dependencies:
+      - target: Daymark
+      - package: SchedulerKit
+      - package: AssistantKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.DaymarkTests
+        GENERATE_INFOPLIST_FILE: YES

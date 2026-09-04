@@ -1,0 +1,23 @@
+#Agents
+.pi/
+.agents/
+.claude/
+.codex/
+.beads/
+AGENTS.md
+CLAUDE.md
+CONTEXT.md
+SPEC.md
+
+# WIP
+Documentation/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+
+graphify-out/
+
+*.xcodeproj/
