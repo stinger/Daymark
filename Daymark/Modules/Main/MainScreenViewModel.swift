@@ -22,7 +22,10 @@ final class MainScreenViewModel {
     var authorizationState: CalendarAuthorizationState = .notDetermined
     var calendars: [CalendarDescriptor] = []
     var workingDayStartsAt: Date {
-        get { date(hour: configuration.workingHours.startHour, minute: configuration.workingHours.startMinute) }
+        get {
+            date(
+                hour: configuration.workingHours.startHour, minute: configuration.workingHours.startMinute)
+        }
         set {
             let calendar = Calendar.autoupdatingCurrent
             saveWorkingHours(
@@ -36,7 +39,9 @@ final class MainScreenViewModel {
         }
     }
     var workingDayEndsAt: Date {
-        get { date(hour: configuration.workingHours.endHour, minute: configuration.workingHours.endMinute) }
+        get {
+            date(hour: configuration.workingHours.endHour, minute: configuration.workingHours.endMinute)
+        }
         set {
             let calendar = Calendar.autoupdatingCurrent
             saveWorkingHours(
@@ -62,6 +67,7 @@ final class MainScreenViewModel {
         self.init(
             calendarAccess: provider,
             demoStore: provider,
+            demoIndexer: DemoEventSpotlightIndexer(),
             scheduleAnswerer: ScheduleAnswerer(
                 calendarAccess: provider,
                 configurationStore: configurationStore,
@@ -74,12 +80,13 @@ final class MainScreenViewModel {
     init(
         calendarAccess: any CalendarAccessProviding,
         demoStore: any DemoEventStore,
+        demoIndexer: any DemoEventIndexing = NoOpDemoEventIndexer(),
         scheduleAnswerer: any ScheduleAnswering,
         configurationStore: ScheduleConfigurationStore = ScheduleConfigurationStore(),
         configurationPrewarmDelay: Duration = .seconds(1)
     ) {
         self.calendarAccess = calendarAccess
-        demoSchedule = DemoScheduleService(store: demoStore)
+        demoSchedule = DemoScheduleService(store: demoStore, indexer: demoIndexer)
         self.scheduleAnswerer = scheduleAnswerer
         self.configurationStore = configurationStore
         self.configurationPrewarmDelay = configurationPrewarmDelay

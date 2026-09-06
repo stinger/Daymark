@@ -1,48 +1,71 @@
 import Foundation
+import OSLog
 import SchedulerKit
 
 struct DemoScheduleService: Sendable {
-    private static let ownershipScheme = "schedule-assistant-demo"
+    private static let logger = Logger.daymark(category: "Demo Spotlight")
 
     private let store: any DemoEventStore
+    private let indexer: any DemoEventIndexing
+    private let intervalStore: any DemoScheduleIntervalStoring
     private let calendar: Calendar
     private let clock: any ScheduleClock
 
     init(
         store: any DemoEventStore,
+        indexer: any DemoEventIndexing = DemoEventSpotlightIndexer(),
+        intervalStore: any DemoScheduleIntervalStoring = DemoScheduleIntervalStore(),
         calendar: Calendar = .autoupdatingCurrent,
         clock: any ScheduleClock = SystemScheduleClock()
     ) {
         self.store = store
+        self.indexer = indexer
+        self.intervalStore = intervalStore
         self.calendar = calendar
         self.clock = clock
     }
 
     func create() async throws -> Int {
         let day = try dayInterval()
-        _ = try await removeGeneratedEvents(in: day)
+        _ = try await removeGeneratedEvents(in: await intervalStore.load() ?? day)
         let definitions = try definitions(for: day.start)
+        await intervalStore.save(day)
         try await store.saveDemoEvents(definitions)
+        await replaceSpotlightIndex(withEventsIn: day)
         return definitions.count
     }
 
     func remove() async throws -> Int {
-        try await removeGeneratedEvents(in: dayInterval())
+        let interval = try await intervalStore.load() ?? dayInterval()
+        return try await removeGeneratedEvents(in: interval)
     }
 
     private func removeGeneratedEvents(in interval: DateInterval) async throws -> Int {
-        let generatedIDs = Set(
-            try await store.events(in: interval)
-                .filter(isGeneratedEvent)
-                .map(\.id)
-        )
-        try await store.removeEvents(withIDs: generatedIDs)
-        return generatedIDs.count
+        let generatedEvents = try await store.events(in: interval)
+            .filter(\.isDaymarkDemoEvent)
+        try await store.removeEvents(withIDs: Set(generatedEvents.map(\.id)))
+        await intervalStore.clear()
+        await removeSpotlightIndex()
+        return generatedEvents.count
     }
 
-    private func isGeneratedEvent(_ event: CalendarEvent) -> Bool {
-        event.title.hasPrefix("[Demo]")
-            && event.conferencingURL?.scheme == Self.ownershipScheme
+    private func replaceSpotlightIndex(withEventsIn interval: DateInterval) async {
+        do {
+            let generatedEvents = try await store.events(in: interval)
+                .filter(\.isDaymarkDemoEvent)
+            try await indexer.removeAll()
+            try await indexer.index(generatedEvents)
+        } catch {
+            Self.logger.error("Could not replace demo Spotlight index: \(error, privacy: .public)")
+        }
+    }
+
+    private func removeSpotlightIndex() async {
+        do {
+            try await indexer.removeAll()
+        } catch {
+            Self.logger.error("Could not remove demo Spotlight index: \(error, privacy: .public)")
+        }
     }
 
     private func dayInterval() throws -> DateInterval {
@@ -108,7 +131,7 @@ struct DemoScheduleService: Sendable {
         day: Date,
         location: String? = nil
     ) throws -> DemoEventDefinition {
-        guard let ownershipURL = URL(string: "\(Self.ownershipScheme)://event/\(id)") else {
+        guard let ownershipURL = URL(string: "\(DemoEventOwnership.scheme)://event/\(id)") else {
             throw SchedulingServiceError.invalidLocalDate
         }
         return DemoEventDefinition(
