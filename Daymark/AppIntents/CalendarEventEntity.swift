@@ -140,16 +140,18 @@ struct CalendarEventEntityQuery: EntityQuery {
 
 }
 
-@available(iOS 27.0, *)
-extension CalendarEventEntityQuery: IndexedEntityQuery {
-    func reindexEntities(
-        for identifiers: [CalendarEventEntity.ID],
-        indexDescription: CSSearchableIndexDescription
-    ) async throws {
-        try await replaceEntities(for: identifiers)
-    }
+#if canImport(AppIntents.IndexedEntityQuery)
+    @available(iOS 27.0, *)
+    extension CalendarEventEntityQuery: IndexedEntityQuery {
+        func reindexEntities(
+            for identifiers: [CalendarEventEntity.ID],
+            indexDescription: CSSearchableIndexDescription
+        ) async throws {
+            try await replaceEntities(for: identifiers)
+        }
 
-    func reindexAllEntities(indexDescription: CSSearchableIndexDescription) async throws {
-        try await replaceAllEntities()
+        func reindexAllEntities(indexDescription: CSSearchableIndexDescription) async throws {
+            try await replaceAllEntities()
+        }
     }
-}
+#endif

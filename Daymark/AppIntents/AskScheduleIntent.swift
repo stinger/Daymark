@@ -4,7 +4,7 @@ import AssistantKit
 struct AskScheduleIntent: AppIntent {
     static let title: LocalizedStringResource = "Ask About My Schedule"
     static let description = IntentDescription("Ask Daymark a calendar question.")
-    static let openAppWhenRun = false
+    static var supportedModes: IntentModes { .background }
 
     @Parameter(
         title: "Request",
@@ -14,16 +14,18 @@ struct AskScheduleIntent: AppIntent {
     var request: String
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
-        let response = await authorizedScheduleResponse()
+    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetIntent {
+        let response = await ScheduleIntentAnswerer.answer(request)
         return .result(
             dialog: "\(response.text)",
-            view: ScheduleResponseSnippetView(response: response)
+            snippetIntent: ScheduleResponseSnippetIntent(request: request, response: response)
         )
     }
+}
 
-    @MainActor
-    private func authorizedScheduleResponse() async -> AssistantResponse {
+@MainActor
+enum ScheduleIntentAnswerer {
+    static func answer(_ request: String) async -> AssistantResponse {
         let provider = EventKitCalendarProvider()
         let answerer = ScheduleAnswerer(
             calendarAccess: provider,
@@ -48,5 +50,4 @@ struct AskScheduleIntent: AppIntent {
             )
         }
     }
-
 }
