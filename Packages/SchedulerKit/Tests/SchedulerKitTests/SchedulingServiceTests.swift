@@ -196,13 +196,6 @@ struct SchedulingServiceTests {
         #expect(today.end == tomorrow.start)
     }
 
-    private func makeCalendar() -> Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = Locale(identifier: "en_US_POSIX")
-        calendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
-        return calendar
-    }
-
     private func makeEvent(
         id: String,
         calendarID: String,

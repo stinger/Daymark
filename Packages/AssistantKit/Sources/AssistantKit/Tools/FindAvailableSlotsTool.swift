@@ -31,8 +31,8 @@ struct FindAvailableSlotsTool: Tool {
             "findAvailableSlots request start=\(arguments.start, privacy: .public) end=\(arguments.end, privacy: .public) durationMinutes=\(arguments.durationMinutes) firstOnly=\(arguments.firstOnly)"
         )
         guard
-            let start = parseDate(arguments.start),
-            let end = parseDate(arguments.end),
+            let start = ScheduleFormatters.modelDate(arguments.start, calendar: calendar),
+            let end = ScheduleFormatters.modelDate(arguments.end, calendar: calendar),
             start < end,
             let dayEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: start)),
             end <= dayEnd
@@ -82,7 +82,4 @@ struct FindAvailableSlotsTool: Tool {
         return FindAvailableSlotsOutput(summary: summary, slots: generatedSlots)
     }
 
-    private func parseDate(_ value: String) -> Date? {
-        ScheduleFormatters.modelDate(value, calendar: calendar)
-    }
 }

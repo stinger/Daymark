@@ -32,8 +32,8 @@ struct GetEventsTool: Tool {
         )
 
         guard
-            let start = parseDate(arguments.start),
-            let end = parseDate(arguments.end),
+            let start = ScheduleFormatters.modelDate(arguments.start, calendar: calendar),
+            let end = ScheduleFormatters.modelDate(arguments.end, calendar: calendar),
             start < end
         else {
             Self.logger.error(
@@ -68,7 +68,4 @@ struct GetEventsTool: Tool {
         return GetEventsOutput(summary: summary, events: generatedEvents)
     }
 
-    private func parseDate(_ value: String) -> Date? {
-        ScheduleFormatters.modelDate(value, calendar: calendar)
-    }
 }

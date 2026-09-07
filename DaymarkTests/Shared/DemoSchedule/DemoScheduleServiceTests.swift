@@ -150,13 +150,6 @@ struct DemoScheduleServiceTests {
         #expect(await store.snapshot().isEmpty)
     }
 
-    private func makeCalendar() -> Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = Locale(identifier: "en_US_POSIX")
-        calendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
-        return calendar
-    }
-
     private func date(
         day: Int = 21,
         hour: Int,
