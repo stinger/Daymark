@@ -99,7 +99,13 @@ struct CalendarEventEntityQuery: EntityQuery {
         return identifiers.compactMap { requested.contains($0) ? byID[$0] : nil }
     }
 
-    private func resolvedDemoEvents(for identifiers: [CalendarEventEntity.ID]) async throws -> [CalendarEvent] {
+    func suggestedEntities() async throws -> [CalendarEventEntity] {
+        try await allDemoEvents().compactMap(CalendarEventEntity.init(demoEvent:))
+    }
+
+    private func resolvedDemoEvents(for identifiers: [CalendarEventEntity.ID]) async throws
+        -> [CalendarEvent]
+    {
         guard let interval = await interval(containing: identifiers) else { return [] }
         let requested = Set(identifiers)
         return try await store.events(in: interval)

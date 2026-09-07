@@ -90,6 +90,50 @@ struct DemoEventSpotlightTests {
     }
 
     @Test
+    func suggestedEntitiesReturnsOnlyDemoEvents() async throws {
+        let demo = makeEvent(id: "demo", title: "[Demo] Planning")
+        let personal = makeEvent(
+            id: "personal",
+            title: "Doctor appointment",
+            conferencingURL: nil
+        )
+        let query = CalendarEventEntityQuery(
+            store: QueryRecordingDemoEventStore(events: [demo, personal]),
+            intervalStore: InMemoryDemoScheduleIntervalStore(
+                interval: interval(containing: [demo, personal])
+            )
+        )
+
+        let entities = try await query.suggestedEntities()
+
+        #expect(entities.map(\.title) == ["[Demo] Planning"])
+    }
+
+    @available(iOS 27.0, *)
+    @Test
+    func selectedEventSummaryHandlesEmptyAndMultipleEvents() throws {
+        let first = try #require(
+            CalendarEventEntity(demoEvent: makeEvent(id: "first", title: "[Demo] Planning"))
+        )
+        let second = try #require(
+            CalendarEventEntity(
+                demoEvent: makeEvent(
+                    id: "second",
+                    title: "[Demo] Review",
+                    start: first.end
+                )
+            )
+        )
+
+        #expect(SummarizeSelectedEventsIntent.summary(of: []) == "No events were selected.")
+
+        let summary = SummarizeSelectedEventsIntent.summary(of: [first, second])
+        #expect(summary.contains("2 events"))
+        #expect(summary.contains(first.title))
+        #expect(summary.contains(second.title))
+    }
+
+    @Test
     func partialReindexDeletesEveryRequestedIDBeforeIndexingResolvedEvents() async throws {
         let event = makeEvent(id: "resolved", title: "[Demo] Resolved")
         let resolvedID = try #require(CalendarEventEntity(demoEvent: event)).id

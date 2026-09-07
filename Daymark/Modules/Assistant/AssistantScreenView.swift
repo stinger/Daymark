@@ -9,6 +9,10 @@ struct AssistantScreenView: View {
             List {
                 SiriTipView(intent: AskScheduleIntent())
 
+                if #available(iOS 27.0, *) {
+                    SiriTipView(intent: SummarizeSelectedEventsIntent())
+                }
+
                 Section("Try the assistant") {
                     TextField(
                         "Ask about your schedule",

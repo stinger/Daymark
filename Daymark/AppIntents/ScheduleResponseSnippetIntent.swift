@@ -25,6 +25,16 @@ struct ScheduleResponseSnippetIntent: SnippetIntent {
         availabilityItems = items.map(\.isAvailability)
     }
 
+    @available(iOS 27.0, *)
+    init(request: String, responseText: String, events: [CalendarEventEntity]) {
+        self.request = request
+        self.responseText = responseText
+        itemTitles = events.map(\.title)
+        itemStarts = events.map(\.start)
+        itemEnds = events.map(\.end)
+        availabilityItems = Array(repeating: false, count: events.count)
+    }
+
     func perform() async throws -> some IntentResult & ShowsSnippetView {
         .result(
             view: InteractiveScheduleResponseSnippetView(
@@ -67,7 +77,8 @@ struct RefreshScheduleSnippetIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ShowsSnippetIntent {
         let response = await ScheduleIntentAnswerer.answer(request)
-        return .result(snippetIntent: ScheduleResponseSnippetIntent(request: request, response: response))
+        return .result(
+            snippetIntent: ScheduleResponseSnippetIntent(request: request, response: response))
     }
 }
 
@@ -78,7 +89,6 @@ private struct InteractiveScheduleResponseSnippetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(responseText)
             ScheduleResponseSnippetView(items: items)
             Button(intent: refreshIntent) {
                 Label("Refresh", systemImage: "arrow.clockwise")
