@@ -200,6 +200,7 @@ final class MainScreenViewModel {
 
         do {
             let createdCount = try await demoSchedule.create()
+            DaymarkShortcuts.updateAppShortcutParameters()
             demoStatus = "Created \(createdCount) demo events."
         } catch {
             errorMessage = "The demo schedule could not be created: \(error.localizedDescription)"
@@ -213,6 +214,7 @@ final class MainScreenViewModel {
 
         do {
             let removedCount = try await demoSchedule.remove()
+            DaymarkShortcuts.updateAppShortcutParameters()
             demoStatus = "Removed \(removedCount) Daymark demo events."
         } catch {
             errorMessage = "The demo schedule could not be removed: \(error.localizedDescription)"

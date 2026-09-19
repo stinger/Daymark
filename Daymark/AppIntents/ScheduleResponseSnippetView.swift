@@ -2,7 +2,7 @@ import AssistantKit
 import Foundation
 import SwiftUI
 
-struct ScheduleTimelineItem: Equatable {
+struct ScheduleTimelineItem: Codable, Equatable {
     let title: String
     let interval: DateInterval
     let isAvailability: Bool
@@ -10,7 +10,7 @@ struct ScheduleTimelineItem: Equatable {
     init(_ item: AssistantPresentationItem) {
         switch item {
         case .event(let event):
-            title = event.title
+            title = event.title.siriSafeSnippetText
             interval = DateInterval(start: event.start, end: event.end)
             isAvailability = false
         case .availabilitySlot(let interval):
@@ -21,32 +21,55 @@ struct ScheduleTimelineItem: Equatable {
     }
 
     init(title: String, start: Date, end: Date, isAvailability: Bool) {
-        self.title = title
+        self.title = title.siriSafeSnippetText
         interval = DateInterval(start: start, end: end)
         self.isAvailability = isAvailability
     }
 }
 
+extension String {
+    fileprivate var siriSafeSnippetText: String {
+        replacingOccurrences(of: "[", with: "(")
+            .replacingOccurrences(of: "]", with: ")")
+    }
+}
+
 struct ScheduleResponseSnippetView: View {
+    let responseText: String?
     let items: [ScheduleTimelineItem]
 
     private let hourHeight: CGFloat = 48
     private let timeColumnWidth: CGFloat = 32
 
     init(response: AssistantResponse) {
+        responseText = response.text
         items = response.items.map(ScheduleTimelineItem.init)
     }
 
     init(items: [ScheduleTimelineItem]) {
+        responseText = nil
         self.items = items
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let responseText, responseText.isEmpty == false {
+                Text(responseText)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            timeline
+        }
+        .dynamicTypeSize(.small)
+    }
+
+    private var timeline: some View {
         ZStack(alignment: .topLeading) {
             ForEach(0 ... hourCount, id: \.self) { hourOffset in
                 HStack(alignment: .center, spacing: 8) {
                     Text(hourLabel(hourOffset))
-                        .font(.caption)
+                        .font(.system(size: 12).bold())
                         .foregroundStyle(.secondary)
                         .frame(width: timeColumnWidth, alignment: .leading)
                         .padding(.leading, 16)
@@ -104,7 +127,7 @@ struct ScheduleResponseSnippetView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 16).weight(.semibold))
                     .lineLimit(1)
                 if interval.duration >= 3600 {
                     HStack(spacing: 4) {

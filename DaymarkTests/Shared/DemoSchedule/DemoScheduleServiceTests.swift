@@ -26,7 +26,7 @@ struct DemoScheduleServiceTests {
             events.map(\.title) == [
                 "[Demo] Morning Call",
                 "[Demo] Focus Block",
-                "[Demo] Lunch",
+                "[Demo] Lunch Break",
                 "[Demo] Afternoon Meeting",
             ]
         )

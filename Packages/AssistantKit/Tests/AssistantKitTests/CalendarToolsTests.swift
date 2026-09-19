@@ -22,6 +22,35 @@ struct CalendarToolsTests {
     }
 
     @Test
+    func getEventsExpandsZeroLengthModelInterval() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+        calendar.timeZone = try #require(TimeZone(identifier: "Europe/Sofia"))
+        let formatter = ISO8601DateFormatter()
+        let eventStart = try #require(formatter.date(from: "2026-09-19T10:00:00+03:00"))
+        let service = SchedulingService(
+            provider: InMemoryCalendarEventProvider(storedEvents: [
+                event(id: "morning", title: "Morning standup", start: eventStart)
+            ]),
+            includedCalendarIDs: ["work"],
+            clock: FixedScheduleClock(now: eventStart.addingTimeInterval(-60 * 60)),
+            calendar: calendar
+        )
+        let tool = GetEventsTool(schedulingService: service, calendar: calendar)
+
+        let output = try await tool.call(
+            arguments: GetEventsArguments(
+                start: "2026-09-19T09:00:00+03:00",
+                end: "2026-09-19T09:00:00+03:00",
+                callsOnly: false,
+                firstOnly: false
+            )
+        )
+
+        #expect(output.events.first?.title == "Morning standup")
+    }
+
+    @Test
     func getEventsTranslatesDomainEventToGeneratedOutputAndPresentationItem() async throws {
         let formatter = ISO8601DateFormatter()
         let start = try #require(formatter.date(from: "2026-08-21T13:00:00Z"))
@@ -48,7 +77,7 @@ struct CalendarToolsTests {
             )
         )
 
-        #expect(output.events.first?.id == event.id)
+        #expect(output.events.first?.id == "event-1")
         #expect(output.events.first?.title == event.title)
         #expect(output.events.first?.start == "2026-08-21T13:00:00Z")
         #expect(output.events.first?.end == "2026-08-21T13:30:00Z")
@@ -150,8 +179,10 @@ struct CalendarToolsTests {
 
         let output = try await tool.call(
             arguments: FindAvailableSlotsArguments(
-                start: "2026-08-21T09:30:00",
-                end: "2026-08-21T10:00:00",
+                date: "2026-08-21",
+                period: .custom,
+                customStart: "2026-08-21T09:30:00",
+                customEnd: "2026-08-21T10:00:00",
                 durationMinutes: 30,
                 firstOnly: true
             )
@@ -168,6 +199,38 @@ struct CalendarToolsTests {
         }
         #expect(interval.start == now.addingTimeInterval(21.5 * 60 * 60))
         #expect(interval.duration == 30 * 60)
+    }
+
+    @Test
+    func availabilityToolResolvesMorningToNoon() async throws {
+        var calendar = utcCalendar()
+        calendar.timeZone = try #require(TimeZone(identifier: "Europe/Sofia"))
+        let service = SchedulingService(
+            provider: InMemoryCalendarEventProvider(storedEvents: []),
+            includedCalendarIDs: ["work"],
+            workingHours: WorkingHours(startHour: 9, endHour: 17),
+            clock: FixedScheduleClock(now: .distantPast),
+            calendar: calendar
+        )
+        let tool = FindAvailableSlotsTool(
+            schedulingService: service,
+            calendar: calendar
+        )
+
+        let output = try await tool.call(
+            arguments: FindAvailableSlotsArguments(
+                date: "2026-09-16",
+                period: .morning,
+                customStart: nil,
+                customEnd: nil,
+                durationMinutes: 30,
+                firstOnly: false
+            )
+        )
+
+        #expect(output.slots.first?.start == "2026-09-16T09:00:00+03:00")
+        #expect(output.slots.last?.end == "2026-09-16T12:00:00+03:00")
+        #expect(output.slots.count == 6)
     }
 
     @Test
@@ -213,8 +276,10 @@ struct CalendarToolsTests {
         await #expect(throws: CalendarToolError.invalidDate) {
             try await tool.call(
                 arguments: FindAvailableSlotsArguments(
-                    start: "2026-08-22T10:00:00Z",
-                    end: "2026-08-22T09:00:00Z",
+                    date: "2026-08-22",
+                    period: .custom,
+                    customStart: "2026-08-22T10:00:00Z",
+                    customEnd: "2026-08-22T09:00:00Z",
                     durationMinutes: 30,
                     firstOnly: true
                 )

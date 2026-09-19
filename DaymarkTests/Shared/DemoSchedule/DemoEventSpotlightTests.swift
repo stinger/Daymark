@@ -109,6 +109,42 @@ struct DemoEventSpotlightTests {
         #expect(entities.map(\.title) == ["[Demo] Planning"])
     }
 
+    @Test
+    func stringQueryFindsEventBySpokenTitle() async throws {
+        let lunch = makeEvent(id: "lunch", title: "[Demo] Lunch Break")
+        let planning = makeEvent(id: "planning", title: "[Demo] Planning")
+        let query = CalendarEventEntityQuery(
+            store: QueryRecordingDemoEventStore(events: [lunch, planning]),
+            intervalStore: InMemoryDemoScheduleIntervalStore(
+                interval: interval(containing: [lunch, planning])
+            )
+        )
+
+        let entities = try await query.entities(matching: "lunch break")
+
+        #expect(entities.map(\.title) == ["[Demo] Lunch Break"])
+    }
+
+    @Test
+    func cancellingEntityRemovesCalendarEventAndSpotlightEntity() async throws {
+        let event = makeEvent(id: "lunch", title: "[Demo] Lunch Break")
+        let store = QueryRecordingDemoEventStore(events: [event])
+        let indexer = QueryRecordingDemoEventIndexer()
+        let query = CalendarEventEntityQuery(
+            store: store,
+            indexer: indexer,
+            intervalStore: InMemoryDemoScheduleIntervalStore(
+                interval: interval(containing: [event])
+            )
+        )
+        let entity = try #require(CalendarEventEntity(demoEvent: event))
+
+        try await query.cancel(entity)
+
+        #expect(await store.removedIDs == [event.id])
+        #expect(await indexer.removedIdentifiers == [[entity.id]])
+    }
+
     @available(iOS 27.0, *)
     @Test
     func selectedEventSummaryHandlesEmptyAndMultipleEvents() throws {
@@ -258,9 +294,10 @@ private actor QueryRecordingDemoEventIndexer: DemoEventIndexing {
 }
 
 private actor QueryRecordingDemoEventStore: DemoEventStore {
-    let storedEvents: [CalendarEvent]
+    var storedEvents: [CalendarEvent]
     let failure: CalendarEventProviderError?
     private(set) var readCount = 0
+    private(set) var removedIDs: Set<String> = []
 
     init(events: [CalendarEvent], failure: CalendarEventProviderError? = nil) {
         storedEvents = events
@@ -277,5 +314,8 @@ private actor QueryRecordingDemoEventStore: DemoEventStore {
 
     func saveDemoEvents(_ events: [DemoEventDefinition]) {}
 
-    func removeEvents(withIDs ids: Set<String>) {}
+    func removeEvents(withIDs ids: Set<String>) {
+        removedIDs.formUnion(ids)
+        storedEvents.removeAll { ids.contains($0.id) }
+    }
 }

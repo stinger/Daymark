@@ -102,7 +102,7 @@ struct DemoScheduleService: Sendable {
             ),
             definition(
                 id: "lunch",
-                title: "Lunch",
+                title: "Lunch Break",
                 startHour: 12,
                 startMinute: 0,
                 endHour: 13,

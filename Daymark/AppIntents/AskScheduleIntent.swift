@@ -1,7 +1,14 @@
 import AppIntents
 import AssistantKit
+import Foundation
+import OSLog
+import SwiftUI
 
 struct AskScheduleIntent: AppIntent {
+    private static let logger = Logger(
+        subsystem: "com.example.Daymark",
+        category: "AskScheduleIntent"
+    )
     static let title: LocalizedStringResource = "Ask About My Schedule"
     static let description = IntentDescription("Ask Daymark a calendar question.")
     static var supportedModes: IntentModes { .background }
@@ -14,12 +21,30 @@ struct AskScheduleIntent: AppIntent {
     var request: String
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetIntent {
+    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        Self.logger.info("AskScheduleIntent perform started")
+        Self.logger.info("AskScheduleIntent request=\(request, privacy: .public)")
         let response = await ScheduleIntentAnswerer.answer(request)
-        return .result(
-            dialog: "\(response.text)",
-            snippetIntent: ScheduleResponseSnippetIntent(request: request, response: response)
+        Self.logger.info(
+            "AskScheduleIntent response text=\(response.text, privacy: .public) itemCount=\(response.items.count)"
         )
+        let dialogText = response.text.siriSafeText
+        let safeResponse = AssistantResponse(
+            text: dialogText,
+            items: response.items
+        )
+        Self.logger.info("AskScheduleIntent returning dialog text=\(dialogText, privacy: .public)")
+        return .result(
+            dialog: "\(dialogText)",
+            view: ScheduleResponseSnippetView(response: safeResponse).padding(16)
+        )
+    }
+}
+
+extension String {
+    fileprivate var siriSafeText: String {
+        replacingOccurrences(of: "[", with: "(")
+            .replacingOccurrences(of: "]", with: ")")
     }
 }
 

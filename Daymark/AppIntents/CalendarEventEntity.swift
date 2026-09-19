@@ -65,7 +65,7 @@ struct CalendarEventEntity: IndexedEntity {
     }
 }
 
-struct CalendarEventEntityQuery: EntityQuery {
+struct CalendarEventEntityQuery: EntityStringQuery {
     private let store: any DemoEventStore
     private let indexer: any DemoEventIndexing
     private let intervalStore: any DemoScheduleIntervalStoring
@@ -101,6 +101,18 @@ struct CalendarEventEntityQuery: EntityQuery {
 
     func suggestedEntities() async throws -> [CalendarEventEntity] {
         try await allDemoEvents().compactMap(CalendarEventEntity.init(demoEvent:))
+    }
+
+    func entities(matching string: String) async throws -> [CalendarEventEntity] {
+        try await suggestedEntities().filter {
+            $0.title.localizedStandardContains(string)
+        }
+    }
+
+    func cancel(_ entity: CalendarEventEntity) async throws {
+        let events = try await resolvedDemoEvents(for: [entity.id])
+        try await store.removeEvents(withIDs: Set(events.map(\.id)))
+        try await indexer.remove(identifiers: [entity.id])
     }
 
     private func resolvedDemoEvents(for identifiers: [CalendarEventEntity.ID]) async throws

@@ -11,6 +11,7 @@ struct AssistantScreenView: View {
 
                 if #available(iOS 27.0, *) {
                     SiriTipView(intent: SummarizeSelectedEventsIntent())
+                    SiriTipView(intent: CancelCalendarEventIntent())
                 }
 
                 Section("Try the assistant") {
@@ -35,9 +36,6 @@ struct AssistantScreenView: View {
                     }
 
                     if let assistantResponse = viewModel.assistantResponse {
-                        Text(formattedResponse(assistantResponse.text))
-                            .textSelection(.enabled)
-
                         ScheduleResponseSnippetView(response: assistantResponse)
                     }
 

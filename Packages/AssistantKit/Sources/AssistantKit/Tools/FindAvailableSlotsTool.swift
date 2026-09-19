@@ -28,20 +28,16 @@ struct FindAvailableSlotsTool: Tool {
 
     func call(arguments: FindAvailableSlotsArguments) async throws -> FindAvailableSlotsOutput {
         Self.logger.info(
-            "findAvailableSlots request start=\(arguments.start, privacy: .public) end=\(arguments.end, privacy: .public) durationMinutes=\(arguments.durationMinutes) firstOnly=\(arguments.firstOnly)"
+            "findAvailableSlots request date=\(arguments.date, privacy: .public) period=\(String(describing: arguments.period), privacy: .public) customStart=\(arguments.customStart ?? "nil", privacy: .public) customEnd=\(arguments.customEnd ?? "nil", privacy: .public) durationMinutes=\(arguments.durationMinutes) firstOnly=\(arguments.firstOnly)"
         )
-        guard
-            let start = ScheduleFormatters.modelDate(arguments.start, calendar: calendar),
-            let end = ScheduleFormatters.modelDate(arguments.end, calendar: calendar),
-            start < end,
-            let dayEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: start)),
-            end <= dayEnd
-        else {
+        guard let interval = searchInterval(for: arguments) else {
             Self.logger.error(
-                "findAvailableSlots rejected start=\(arguments.start, privacy: .public) end=\(arguments.end, privacy: .public); expected an increasing ISO 8601 timestamp interval within one calendar day"
+                "findAvailableSlots rejected date=\(arguments.date, privacy: .public) period=\(String(describing: arguments.period), privacy: .public); expected a valid local date and increasing same-day custom bounds"
             )
             throw CalendarToolError.invalidDate
         }
+        let start = interval.start
+        let end = interval.end
 
         let result = try await schedulingService.findAvailableSlots(
             in: DateInterval(start: start, end: end),
@@ -68,8 +64,8 @@ struct FindAvailableSlotsTool: Tool {
         }
         let summary: String
         if result.slots.isEmpty {
-            // swift-format-ignore
-            summary = "No \(arguments.durationMinutes)-minute opening between \(arguments.start) and \(arguments.end)."
+            summary =
+                "No \(arguments.durationMinutes)-minute opening between \(intervalFormatter.string(from: start)) and \(intervalFormatter.string(from: end))."
         } else {
             let openings = result.slots.map { slot in
                 "\(timeFormatter.string(from: slot.start))–\(timeFormatter.string(from: slot.end))"
@@ -80,6 +76,43 @@ struct FindAvailableSlotsTool: Tool {
                 : "Exact \(arguments.durationMinutes)-minute openings, in chronological order: \(openings)."
         }
         return FindAvailableSlotsOutput(summary: summary, slots: generatedSlots)
+    }
+
+    private func searchInterval(for arguments: FindAvailableSlotsArguments) -> DateInterval? {
+        guard
+            let date = ScheduleFormatters.localDay(calendar: calendar).date(from: arguments.date),
+            let workingInterval = try? schedulingService.workingInterval(on: date)
+        else { return nil }
+
+        switch arguments.period {
+        case .workingDay:
+            return workingInterval
+        case .morning:
+            guard let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) else {
+                return nil
+            }
+            let end = min(noon, workingInterval.end)
+            return workingInterval.start < end
+                ? DateInterval(start: workingInterval.start, end: end) : nil
+        case .afternoon:
+            guard let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) else {
+                return nil
+            }
+            let start = max(noon, workingInterval.start)
+            return start < workingInterval.end
+                ? DateInterval(start: start, end: workingInterval.end) : nil
+        case .custom:
+            guard
+                let customStart = arguments.customStart,
+                let customEnd = arguments.customEnd,
+                let start = ScheduleFormatters.modelDate(customStart, calendar: calendar),
+                let end = ScheduleFormatters.modelDate(customEnd, calendar: calendar),
+                start < end,
+                calendar.isDate(start, inSameDayAs: date),
+                calendar.isDate(end.addingTimeInterval(-1), inSameDayAs: date)
+            else { return nil }
+            return DateInterval(start: start, end: end)
+        }
     }
 
 }

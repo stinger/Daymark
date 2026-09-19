@@ -16,11 +16,15 @@ struct SummarizeSelectedEventsIntent: AppIntent {
         Summary("Summarize \(\.$events)")
     }
 
-    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetIntent {
+    func perform() async throws
+        -> some IntentResult & ReturnsValue<EntityCollection<CalendarEventEntity>> & ProvidesDialog
+        & ShowsSnippetIntent
+    {
         let selectedEvents = try await events.resolvedEntities().sorted { $0.start < $1.start }
         let responseText = Self.summary(of: selectedEvents)
 
         return .result(
+            value: EntityCollection(entities: selectedEvents),
             dialog: "\(responseText)",
             snippetIntent: ScheduleResponseSnippetIntent(
                 request: "Summarize selected events",
