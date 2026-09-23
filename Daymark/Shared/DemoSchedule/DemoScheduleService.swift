@@ -136,7 +136,7 @@ struct DemoScheduleService: Sendable {
         }
         return DemoEventDefinition(
             id: id,
-            title: "[Demo] \(title)",
+            title: "Demo - \(title)",
             start: try date(on: day, hour: startHour, minute: startMinute),
             end: try date(on: day, hour: endHour, minute: endMinute),
             location: location,

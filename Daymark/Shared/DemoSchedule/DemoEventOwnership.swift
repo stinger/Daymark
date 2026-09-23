@@ -5,7 +5,7 @@ enum DemoEventOwnership {
     static let scheme = "schedule-assistant-demo"
 
     static func owns(_ event: CalendarEvent) -> Bool {
-        event.title.hasPrefix("[Demo]") && event.conferencingURL?.scheme == scheme
+        event.title.hasPrefix("Demo -") && event.conferencingURL?.scheme == scheme
     }
 }
 

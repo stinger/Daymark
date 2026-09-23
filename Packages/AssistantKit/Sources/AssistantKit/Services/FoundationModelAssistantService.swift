@@ -109,11 +109,11 @@ public final class FoundationModelAssistantService: DaymarkServicing {
         do {
             let response = try await session.respond(
                 to: prompt(for: request, workingHours: workingHours),
-                generating: PlainTextResponse.self
+                // generating: PlainTextResponse.self
                     // options: GenerationOptions(temperature: 0.01)
             )
-            let text = response.content.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            let spokenText = response.content.spokenText.trimmingCharacters(
+            let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let spokenText = response.content.trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
             let items = await resultStore.recordedItems()

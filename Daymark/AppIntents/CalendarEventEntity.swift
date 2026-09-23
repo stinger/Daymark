@@ -1,6 +1,7 @@
 import AppIntents
 import CoreSpotlight
 import Foundation
+import OSLog
 import SchedulerKit
 
 struct CalendarEventEntity: IndexedEntity {
@@ -66,6 +67,8 @@ struct CalendarEventEntity: IndexedEntity {
 }
 
 struct CalendarEventEntityQuery: EntityStringQuery {
+    private static let logger = Logger.daymark(category: "CalendarEventEntityQuery")
+
     private let store: any DemoEventStore
     private let indexer: any DemoEventIndexing
     private let intervalStore: any DemoScheduleIntervalStoring
@@ -91,28 +94,43 @@ struct CalendarEventEntityQuery: EntityStringQuery {
     }
 
     func entities(for identifiers: [CalendarEventEntity.ID]) async throws -> [CalendarEventEntity] {
-        guard let interval = await interval(containing: identifiers) else { return [] }
+        Self.logger.info("Resolving entities for identifiers=\(identifiers, privacy: .public)")
+        guard let interval = await interval(containing: identifiers) else {
+            Self.logger.error("Could not resolve entities because no persisted interval matched identifiers=\(identifiers, privacy: .public)")
+            return []
+        }
         let requested = Set(identifiers)
-        let entities = try await store.events(in: interval)
-            .compactMap(CalendarEventEntity.init(demoEvent:))
+        let events = try await store.events(in: interval)
+        let entities = events.compactMap(CalendarEventEntity.init(demoEvent:))
         let byID = Dictionary(uniqueKeysWithValues: entities.map { ($0.id, $0) })
-        return identifiers.compactMap { requested.contains($0) ? byID[$0] : nil }
+        let resolved = identifiers.compactMap { requested.contains($0) ? byID[$0] : nil }
+        Self.logger.info("Resolved \(resolved.count, privacy: .public) of \(identifiers.count, privacy: .public) identifiers from \(events.count, privacy: .public) events")
+        return resolved
     }
 
     func suggestedEntities() async throws -> [CalendarEventEntity] {
-        try await allDemoEvents().compactMap(CalendarEventEntity.init(demoEvent:))
+        let events = try await allDemoEvents()
+        let entities = events.compactMap(CalendarEventEntity.init(demoEvent:))
+        Self.logger.info("Suggested \(entities.count, privacy: .public) demo event entities")
+        return entities
     }
 
     func entities(matching string: String) async throws -> [CalendarEventEntity] {
-        try await suggestedEntities().filter {
+        let entities = try await suggestedEntities().filter {
             $0.title.localizedStandardContains(string)
         }
+        Self.logger.info("Matched \(entities.count, privacy: .public) demo event entities for query=\(string, privacy: .public)")
+        return entities
     }
 
     func cancel(_ entity: CalendarEventEntity) async throws {
+        Self.logger.info("Cancelling entityID=\(entity.id, privacy: .public) title=\(entity.title, privacy: .public)")
         let events = try await resolvedDemoEvents(for: [entity.id])
+        Self.logger.info("Resolved \(events.count, privacy: .public) calendar events to remove for entityID=\(entity.id, privacy: .public)")
         try await store.removeEvents(withIDs: Set(events.map(\.id)))
+        Self.logger.info("Removed calendar events for entityID=\(entity.id, privacy: .public)")
         try await indexer.remove(identifiers: [entity.id])
+        Self.logger.info("Removed Spotlight entityID=\(entity.id, privacy: .public)")
     }
 
     private func resolvedDemoEvents(for identifiers: [CalendarEventEntity.ID]) async throws
@@ -128,8 +146,14 @@ struct CalendarEventEntityQuery: EntityStringQuery {
     }
 
     private func allDemoEvents() async throws -> [CalendarEvent] {
-        guard let interval = await intervalStore.load() else { return [] }
-        return try await store.events(in: interval).filter(\.isDaymarkDemoEvent)
+        guard let interval = await intervalStore.load() else {
+            Self.logger.error("No persisted demo schedule interval; returning no demo events")
+            return []
+        }
+        let events = try await store.events(in: interval)
+        let demoEvents = events.filter(\.isDaymarkDemoEvent)
+        Self.logger.info("Loaded \(demoEvents.count, privacy: .public) demo events from \(events.count, privacy: .public) calendar events in persisted interval")
+        return demoEvents
     }
 
     func replaceEntities(for identifiers: [CalendarEventEntity.ID]) async throws {

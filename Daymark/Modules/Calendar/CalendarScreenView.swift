@@ -68,7 +68,7 @@ struct CalendarScreenView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Text("Only events marked [Demo] and owned by Daymark are removed.")
+                    Text("Only events marked \"Demo -\" and owned by Daymark are removed.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

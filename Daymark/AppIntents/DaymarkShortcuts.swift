@@ -34,7 +34,8 @@ struct DaymarkShortcuts: AppShortcutsProvider {
             AppShortcut(
                 intent: CancelCalendarEventIntent(),
                 phrases: [
-                    "Cancel \(\.$event) with \(.applicationName)"
+                    "Cancel \(\.$event) with \(.applicationName)",
+                    "Cancel a demo event with \(.applicationName)"
                 ],
                 shortTitle: "Cancel Demo Event",
                 systemImageName: "calendar.badge.minus"

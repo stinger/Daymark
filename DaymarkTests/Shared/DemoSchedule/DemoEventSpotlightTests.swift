@@ -10,7 +10,7 @@ struct DemoEventSpotlightTests {
     func entityMapsOnlyDocumentedDemoMetadata() throws {
         let event = makeEvent(
             id: "event-123",
-            title: "[Demo] Planning",
+            title: "Demo - Planning",
             location: "Private room",
             conferencingURL: URL(string: "schedule-assistant-demo://event/planning")
         )
@@ -18,10 +18,10 @@ struct DemoEventSpotlightTests {
         let entity = try #require(CalendarEventEntity(demoEvent: event))
         let attributes = entity.attributeSet
 
-        #expect(entity.title == "[Demo] Planning")
+        #expect(entity.title == "Demo - Planning")
         #expect(entity.start == event.start)
         #expect(entity.end == event.end)
-        #expect(attributes.title == "[Demo] Planning")
+        #expect(attributes.title == "Demo - Planning")
         #expect(attributes.startDate == event.start)
         #expect(attributes.endDate == event.end)
         #expect(attributes.contentDescription == nil)
@@ -42,10 +42,10 @@ struct DemoEventSpotlightTests {
 
     @Test
     func queryResolvesIdentifiersWithOneBatchedCalendarRead() async throws {
-        let first = makeEvent(id: "first", title: "[Demo] First")
+        let first = makeEvent(id: "first", title: "Demo - First")
         let second = makeEvent(
             id: "second",
-            title: "[Demo] Second",
+            title: "Demo - Second",
             start: Date(timeIntervalSince1970: 1_800_086_400)
         )
         let unrelated = makeEvent(
@@ -67,14 +67,14 @@ struct DemoEventSpotlightTests {
 
         let entities = try await query.entities(for: identifiers)
 
-        #expect(entities.map(\.title) == ["[Demo] First", "[Demo] Second"])
+        #expect(entities.map(\.title) == ["Demo - First", "Demo - Second"])
         #expect(await store.readCount == 1)
     }
 
     @Test
     func queryReturnsEmptyWhenNoDemoEventsExist() async throws {
         let store = QueryRecordingDemoEventStore(events: [])
-        let event = makeEvent(id: "missing", title: "[Demo] Missing")
+        let event = makeEvent(id: "missing", title: "Demo - Missing")
         let query = CalendarEventEntityQuery(
             store: store,
             intervalStore: InMemoryDemoScheduleIntervalStore(
@@ -91,7 +91,7 @@ struct DemoEventSpotlightTests {
 
     @Test
     func suggestedEntitiesReturnsOnlyDemoEvents() async throws {
-        let demo = makeEvent(id: "demo", title: "[Demo] Planning")
+        let demo = makeEvent(id: "demo", title: "Demo - Planning")
         let personal = makeEvent(
             id: "personal",
             title: "Doctor appointment",
@@ -106,13 +106,13 @@ struct DemoEventSpotlightTests {
 
         let entities = try await query.suggestedEntities()
 
-        #expect(entities.map(\.title) == ["[Demo] Planning"])
+        #expect(entities.map(\.title) == ["Demo - Planning"])
     }
 
     @Test
     func stringQueryFindsEventBySpokenTitle() async throws {
-        let lunch = makeEvent(id: "lunch", title: "[Demo] Lunch Break")
-        let planning = makeEvent(id: "planning", title: "[Demo] Planning")
+        let lunch = makeEvent(id: "lunch", title: "Demo - Lunch Break")
+        let planning = makeEvent(id: "planning", title: "Demo - Planning")
         let query = CalendarEventEntityQuery(
             store: QueryRecordingDemoEventStore(events: [lunch, planning]),
             intervalStore: InMemoryDemoScheduleIntervalStore(
@@ -122,12 +122,12 @@ struct DemoEventSpotlightTests {
 
         let entities = try await query.entities(matching: "lunch break")
 
-        #expect(entities.map(\.title) == ["[Demo] Lunch Break"])
+        #expect(entities.map(\.title) == ["Demo - Lunch Break"])
     }
 
     @Test
     func cancellingEntityRemovesCalendarEventAndSpotlightEntity() async throws {
-        let event = makeEvent(id: "lunch", title: "[Demo] Lunch Break")
+        let event = makeEvent(id: "lunch", title: "Demo - Lunch Break")
         let store = QueryRecordingDemoEventStore(events: [event])
         let indexer = QueryRecordingDemoEventIndexer()
         let query = CalendarEventEntityQuery(
@@ -149,13 +149,13 @@ struct DemoEventSpotlightTests {
     @Test
     func selectedEventSummaryHandlesEmptyAndMultipleEvents() throws {
         let first = try #require(
-            CalendarEventEntity(demoEvent: makeEvent(id: "first", title: "[Demo] Planning"))
+            CalendarEventEntity(demoEvent: makeEvent(id: "first", title: "Demo - Planning"))
         )
         let second = try #require(
             CalendarEventEntity(
                 demoEvent: makeEvent(
                     id: "second",
-                    title: "[Demo] Review",
+                    title: "Demo - Review",
                     start: first.end
                 )
             )
@@ -171,10 +171,10 @@ struct DemoEventSpotlightTests {
 
     @Test
     func partialReindexDeletesEveryRequestedIDBeforeIndexingResolvedEvents() async throws {
-        let event = makeEvent(id: "resolved", title: "[Demo] Resolved")
+        let event = makeEvent(id: "resolved", title: "Demo - Resolved")
         let resolvedID = try #require(CalendarEventEntity(demoEvent: event)).id
         let missingID = try #require(
-            CalendarEventEntity(demoEvent: makeEvent(id: "missing", title: "[Demo] Missing"))
+            CalendarEventEntity(demoEvent: makeEvent(id: "missing", title: "Demo - Missing"))
         ).id
         let indexer = QueryRecordingDemoEventIndexer()
         let query = CalendarEventEntityQuery(
@@ -194,10 +194,10 @@ struct DemoEventSpotlightTests {
 
     @Test
     func fullReindexDeletesTypeBeforeReadingPersistedIntervalAndRebuilding() async throws {
-        let inside = makeEvent(id: "inside", title: "[Demo] Inside")
+        let inside = makeEvent(id: "inside", title: "Demo - Inside")
         let outside = makeEvent(
             id: "outside",
-            title: "[Demo] Outside",
+            title: "Demo - Outside",
             start: inside.start.addingTimeInterval(86_400)
         )
         let intervalStore = InMemoryDemoScheduleIntervalStore(
@@ -223,7 +223,7 @@ struct DemoEventSpotlightTests {
             events: [],
             failure: CalendarEventProviderError.accessRequired
         )
-        let event = makeEvent(id: "missing", title: "[Demo] Missing")
+        let event = makeEvent(id: "missing", title: "Demo - Missing")
         let query = CalendarEventEntityQuery(
             store: store,
             intervalStore: InMemoryDemoScheduleIntervalStore(

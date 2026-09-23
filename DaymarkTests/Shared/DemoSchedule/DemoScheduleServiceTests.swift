@@ -24,10 +24,10 @@ struct DemoScheduleServiceTests {
         #expect(createdCount == 4)
         #expect(
             events.map(\.title) == [
-                "[Demo] Morning Call",
-                "[Demo] Focus Block",
-                "[Demo] Lunch Break",
-                "[Demo] Afternoon Meeting",
+                "Demo - Morning Call",
+                "Demo - Focus Block",
+                "Demo - Lunch Break",
+                "Demo - Afternoon Meeting",
             ]
         )
         #expect(events.allSatisfy { calendar.component(.day, from: $0.start) == 22 })
