@@ -52,16 +52,29 @@ struct ScheduleResponseSnippetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        if items.count > 0 {
+            VStack(alignment: .leading, spacing: 12) {
+                if let responseText, responseText.isEmpty == false {
+                    Text(responseText)
+                        .multilineTextAlignment(.leading)
+                        .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if items.count > 0 {
+                    timeline
+                } else {
+                    EmptyView()
+                }
+            }
+        } else {
             if let responseText, responseText.isEmpty == false {
                 Text(responseText)
+                    .multilineTextAlignment(.leading)
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
             }
-
-            timeline
         }
-        .dynamicTypeSize(.small)
     }
 
     private var timeline: some View {

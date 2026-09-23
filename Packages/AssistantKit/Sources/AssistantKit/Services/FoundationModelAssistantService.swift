@@ -108,16 +108,19 @@ public final class FoundationModelAssistantService: DaymarkServicing {
 
         do {
             let response = try await session.respond(
-                to: prompt(for: request, workingHours: workingHours)
-                // generating: PlainTextResponse.self,
-                // options: GenerationOptions(temperature: 0.01)
+                to: prompt(for: request, workingHours: workingHours),
+                generating: PlainTextResponse.self
+                    // options: GenerationOptions(temperature: 0.01)
             )
-            let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = response.content.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            let spokenText = response.content.spokenText.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
             let items = await resultStore.recordedItems()
             Self.logger.info(
-                "Foundation Models response text=\(text, privacy: .public) itemCount=\(items.count)"
+                "Foundation Models response text=\(text, privacy: .public) spokenText=\(spokenText, privacy: .public) itemCount=\(items.count)"
             )
-            return AssistantResponse(text: text, items: items)
+            return AssistantResponse(text: text, spokenText: spokenText, items: items)
         } catch CalendarEventProviderError.accessRequired {
             throw DaymarkError.calendarAccessRequired
         } catch {
@@ -152,7 +155,11 @@ public final class FoundationModelAssistantService: DaymarkServicing {
                 calendar: calendar
             ),
         ]
-        let session = LanguageModelSession(model: model, tools: tools, instructions: instructions)
+        let session = LanguageModelSession(
+            model: model,
+            tools: tools,
+            instructions: instructions
+        )
         return (session, resultStore)
     }
 
@@ -178,7 +185,8 @@ public final class FoundationModelAssistantService: DaymarkServicing {
         Keep the final answer to one short spoken sentence. State the duration and result time for availability. For no result, state the date, working-hour bounds, and duration. Report the first availability slot only.
         When there are multiple events to report - report only their count.
         Never claim to create, edit, or delete calendar data.
-        Return plain text only. DO NOT use Markdown, lists, headings, tables, emphasis, or code formatting. Format only the hours, so that they feel natural to the user when spoken.
+        Return plain text only. DO NOT use Markdown, lists, headings, tables, emphasis, or code formatting.
+        When there are multiple events or availability slots to report - just state their count. Write as if you are responding to the user. Never state "My", "I" or "We".
         """
     }
 
@@ -208,7 +216,8 @@ public final class FoundationModelAssistantService: DaymarkServicing {
         }
 
         let formatter = ScheduleFormatters.iso8601(timeZone: calendar.timeZone)
-        return "\(formatter.string(from: interval.start)) to \(formatter.string(from: interval.end))"
+        return
+            "\(formatter.string(from: interval.start)) to \(formatter.string(from: interval.end))"
     }
 
     private func localDate(for date: Date) -> String {

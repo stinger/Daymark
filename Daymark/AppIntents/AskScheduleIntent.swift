@@ -28,23 +28,11 @@ struct AskScheduleIntent: AppIntent {
         Self.logger.info(
             "AskScheduleIntent response text=\(response.text, privacy: .public) itemCount=\(response.items.count)"
         )
-        let dialogText = response.text.siriSafeText
-        let safeResponse = AssistantResponse(
-            text: dialogText,
-            items: response.items
-        )
-        Self.logger.info("AskScheduleIntent returning dialog text=\(dialogText, privacy: .public)")
+        Self.logger.info("AskScheduleIntent returning dialog text=\(response.spokenText, privacy: .public)")
         return .result(
-            dialog: "\(dialogText)",
-            view: ScheduleResponseSnippetView(response: safeResponse).padding(16)
+            dialog: "\(response.spokenText)",
+            view: ScheduleResponseSnippetView(response: response).padding(16)
         )
-    }
-}
-
-extension String {
-    fileprivate var siriSafeText: String {
-        replacingOccurrences(of: "[", with: "(")
-            .replacingOccurrences(of: "]", with: ")")
     }
 }
 
