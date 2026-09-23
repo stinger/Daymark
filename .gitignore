@@ -25,3 +25,4 @@ Documentation/
 graphify-out/
 
 *.xcodeproj/
+Docs/
