@@ -12,6 +12,10 @@ SPEC.md
 # WIP
 Documentation/
 
+# Generated artifacts
+.DS_Store
+.build/
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
@@ -21,3 +25,4 @@ Documentation/
 graphify-out/
 
 *.xcodeproj/
+Docs/

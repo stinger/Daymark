@@ -6,30 +6,17 @@ struct StatusScreenView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Status") {
-                    LabeledContent("App", value: viewModel.status)
-                    LabeledContent("Foundation Models") {
-                        Text(viewModel.modelAvailabilityDescription)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    LabeledContent("Calendar") {
-                        Text(viewModel.authorizationDescription)
-                            .multilineTextAlignment(.trailing)
-                    }
+                AppStatusSection(status: viewModel.status)
+                FoundationModelsStatusSection(description: viewModel.modelAvailabilityDescription)
+                CalendarStatusSection(
+                    description: viewModel.authorizationDescription,
+                    canRequestAccess: viewModel.canRequestCalendarAccess,
+                    isLoading: viewModel.isLoading,
+                    requestAccess: viewModel.requestCalendarAccess
+                )
 
-                    if viewModel.canRequestCalendarAccess {
-                        Button("Grant Calendar Access", systemImage: "calendar.badge.checkmark") {
-                            Task {
-                                await viewModel.requestCalendarAccess()
-                            }
-                        }
-                        .disabled(viewModel.isLoading)
-                    }
-
-                    if let errorMessage = viewModel.errorMessage {
-                        Text(errorMessage)
-                            .foregroundStyle(.red)
-                    }
+                if let errorMessage = viewModel.errorMessage {
+                    StatusErrorSection(message: errorMessage)
                 }
             }
             .navigationTitle("Status")

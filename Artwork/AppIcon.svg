@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="128" y1="80" x2="896" y2="944" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#68A8FF"/>
+      <stop offset="0.48" stop-color="#5577ED"/>
+      <stop offset="1" stop-color="#6646C8"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="512" y1="238" x2="512" y2="804" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EAF0FF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#background)"/>
+  <circle cx="222" cy="112" r="360" fill="#FFFFFF" opacity="0.10"/>
+  <circle cx="900" cy="914" r="390" fill="#2D1A8F" opacity="0.12"/>
+
+  <g transform="translate(-40.96 -40.96) scale(1.08)">
+  <rect x="198" y="246" width="628" height="580" rx="148" fill="#18235E" opacity="0.18"/>
+  <rect x="198" y="222" width="628" height="580" rx="148" fill="url(#paper)" opacity="0.78"/>
+  <path d="M198 370V370C198 288.262 264.262 222 346 222H678C759.738 222 826 288.262 826 370V386H198V370Z" fill="#FFFFFF" opacity="0.44"/>
+  <rect x="198" y="370" width="628" height="22" fill="#4967D7" opacity="0.18"/>
+
+  <rect x="330" y="180" width="58" height="132" rx="29" fill="#FFFFFF"/>
+  <rect x="636" y="180" width="58" height="132" rx="29" fill="#FFFFFF"/>
+  <rect x="342" y="194" width="34" height="92" rx="17" fill="#6D86EA" opacity="0.32"/>
+  <rect x="648" y="194" width="34" height="92" rx="17" fill="#6D86EA" opacity="0.32"/>
+
+  <g transform="translate(-204.8 -231.2) scale(1.4)" opacity="0.78">
+    <circle cx="430" cy="548" r="25" fill="#26356E" transform="rotate(-24 430 548)"/>
+    <circle cx="482" cy="518" r="27" fill="#26356E" transform="rotate(-8 482 518)"/>
+    <circle cx="542" cy="518" r="27" fill="#26356E" transform="rotate(8 542 518)"/>
+    <circle cx="594" cy="548" r="25" fill="#26356E" transform="rotate(24 594 548)"/>
+    <path d="M512 558C471 558 430 608 438 648C445 684 479 681 512 664C545 681 579 684 586 648C594 608 553 558 512 558Z" fill="#26356E"/>
+  </g>
+  </g>
+</svg>

@@ -71,6 +71,10 @@ public struct SchedulingService: Sendable {
         CallClassifier().isCall(event)
     }
 
+    public func workingInterval(on date: Date) throws -> DateInterval {
+        try workingHours.interval(on: date, calendar: calendar)
+    }
+
     public func findAvailableSlots(
         in interval: DateInterval,
         duration: TimeInterval = 30 * 60,
